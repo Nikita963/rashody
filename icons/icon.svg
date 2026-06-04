@@ -1,4 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label=" 0AE>4K">
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="???????">
   <defs>
     <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" stop-color="#1a222d"/>
@@ -7,5 +8,10 @@
   </defs>
   <rect width="512" height="512" rx="112" fill="url(#bg)"/>
   <circle cx="256" cy="256" r="148" fill="#3d9cf5" opacity="0.18"/>
-  <text x="256" y="318" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'SF Pro Display',system-ui,sans-serif" font-size="220" font-weight="700" fill="#3d9cf5">½</text>
+  <g fill="none" stroke="#3d9cf5" stroke-width="38" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M204 142v228"/>
+    <path d="M204 142h70c58 0 94 36 94 80s-36 80-94 80h-70"/>
+    <path d="M170 268h222"/>
+    <path d="M170 326h168"/>
+  </g>
 </svg>
