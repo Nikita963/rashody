@@ -134,6 +134,10 @@ html, body {
   margin-bottom: 10px;
 }
 
+.section-label--compact {
+  margin-bottom: 8px;
+}
+
 .chips {
   display: flex;
   flex-wrap: wrap;
@@ -142,11 +146,41 @@ html, body {
 }
 
 .chips--kind {
-  margin-bottom: 10px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.chips--kind .chip {
+  padding: 8px 6px;
+  font-size: 0.8rem;
+  text-align: center;
+}
+
+.chips--scroll {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  margin-bottom: 14px;
+  padding-bottom: 2px;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  mask-image: linear-gradient(90deg, #000 92%, transparent);
+  -webkit-mask-image: linear-gradient(90deg, #000 92%, transparent);
+}
+
+.chips--scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.chips--scroll .chip {
+  flex-shrink: 0;
+  padding: 8px 12px;
+  font-size: 0.85rem;
 }
 
 .expense-categories .chips {
-  margin-bottom: 20px;
+  margin-bottom: 14px;
 }
 
 .chip {

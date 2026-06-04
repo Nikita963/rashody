@@ -772,9 +772,12 @@ function renderCategoryChips() {
     btn.addEventListener('click', () => {
       selectedCategoryId = cat.id;
       renderCategoryChips();
+      btn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
     });
     subEl.appendChild(btn);
   });
+  const activeBtn = subEl.querySelector('.chip--active');
+  if (activeBtn) activeBtn.scrollIntoView({ block: 'nearest', inline: 'center' });
 }
 
 function toggleDebtFields() {
