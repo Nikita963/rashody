@@ -20,6 +20,7 @@
       <h1 class="header__title" id="pageTitle">Транзакция</h1>
       <div class="header__summaries" id="headerSummaries">
         <p class="header__summary" id="monthExpenseTotal"></p>
+        <p class="header__summary header__summary--compare hidden" id="monthExpenseCompare"></p>
         <p class="header__summary header__summary--income" id="monthIncomeTotal"></p>
       </div>
     </header>
@@ -82,6 +83,7 @@
           <input class="field__input" id="noteInput" type="text" placeholder="Например: обед" />
         </label>
 
+        <button class="btn btn--secondary hidden" id="cancelEdit" type="button">Отмена</button>
         <button class="btn btn--primary" id="saveExpense" type="button">Сохранить</button>
       </section>
 
@@ -92,15 +94,64 @@
             <button class="filter-btn filter-btn--active" data-filter="month" type="button">Месяц</button>
             <button class="filter-btn" data-filter="all" type="button">Всё</button>
           </div>
-          <button class="history-toolbar__select" id="historySelectToggle" type="button">Выбор</button>
+          <div class="history-toolbar__actions">
+            <button class="history-toolbar__select" id="historyOpenStats" type="button">Статистика</button>
+            <button class="history-toolbar__select" id="historySelectToggle" type="button">Выбор</button>
+          </div>
         </div>
         <div class="history-select-bar hidden" id="historySelectBar">
           <button class="history-select-bar__btn" id="historySelectAll" type="button">Все</button>
           <button class="history-select-bar__btn history-select-bar__btn--danger" id="historyDeleteSelected" type="button" disabled>Удалить</button>
           <button class="history-select-bar__btn" id="historyCancelSelect" type="button">Готово</button>
         </div>
+        <div class="history-search" id="historySearchBlock">
+          <div class="history-search__row">
+            <input
+              class="history-search__input"
+              id="historySearchInput"
+              type="search"
+              placeholder="Категория, заметка, сумма…"
+              autocomplete="off"
+              enterkeyhint="search"
+            />
+            <button class="history-search__clear hidden" id="historySearchClear" type="button" aria-label="Очистить поиск">×</button>
+          </div>
+          <div class="chips history-primary-filters" id="historyPrimaryFilters">
+            <button class="chip chip--active" data-history-kind="all" type="button">Все</button>
+            <button class="chip" data-history-kind="expense" type="button">Траты</button>
+            <button class="chip chip--income" data-history-kind="income" type="button">Поступления</button>
+            <button class="chip chip--debt" data-history-kind="debt" type="button">Долги</button>
+          </div>
+          <div class="chips history-sub-filters hidden" id="historySubFilters"></div>
+        </div>
         <ul class="expense-list" id="expenseList"></ul>
         <p class="empty" id="historyEmpty">Пока нет трат</p>
+      </section>
+
+      <!-- STATS -->
+      <section class="panel" data-panel="stats" id="panelStats">
+        <div class="history-toolbar">
+          <button class="history-toolbar__select history-toolbar__back" id="statsBackBtn" type="button">← История</button>
+          <div class="filter-row">
+            <button class="stats-filter-btn stats-filter-btn--active" data-stats-filter="month" type="button">Месяц</button>
+            <button class="stats-filter-btn" data-stats-filter="all" type="button">Всё</button>
+          </div>
+        </div>
+        <p class="stats-period" id="statsPeriod"></p>
+        <div class="stats-cards" id="statsCards"></div>
+        <div class="section-label">Траты по категориям</div>
+        <div class="stats-pie-wrap hidden" id="statsPieWrap">
+          <div class="stats-pie" id="statsPie" role="img" aria-hidden="true">
+            <span class="stats-pie__center" id="statsPieCenter"></span>
+          </div>
+          <ul class="stats-pie-legend" id="statsPieLegend"></ul>
+        </div>
+        <div class="stats-bars" id="statsCategoryBars"></div>
+        <p class="empty hidden" id="statsCategoryEmpty">Нет трат за выбранный период</p>
+        <div class="stats-debts hidden" id="statsDebtsBlock">
+          <div class="section-label">Активные долги</div>
+          <div class="stats-debts-card" id="statsDebtsCard"></div>
+        </div>
       </section>
 
       <!-- DEBTS -->
@@ -151,6 +202,6 @@
       </button>
     </nav>
   </div>
-  <script src="app.js?v=6"></script>
+  <script src="app.js?v=10"></script>
 </body>
 </html>
