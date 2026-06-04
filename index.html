@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="theme-color" content="#0f1419" />
+  <title>Расходы</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div id="app">
+    <header class="header">
+      <h1 class="header__title" id="pageTitle">Транзакция</h1>
+      <div class="header__summaries" id="headerSummaries">
+        <p class="header__summary" id="monthExpenseTotal"></p>
+        <p class="header__summary header__summary--income" id="monthIncomeTotal"></p>
+      </div>
+    </header>
+
+    <main class="main">
+      <!-- ADD -->
+      <section class="panel panel--active" data-panel="add" id="panelAdd">
+        <div class="amount-box">
+          <label class="amount-box__label" for="amountInput">Сумма, ₽</label>
+          <input
+            id="amountInput"
+            class="amount-box__input"
+            type="text"
+            inputmode="decimal"
+            placeholder="0"
+            autocomplete="off"
+          />
+        </div>
+
+        <div class="section-label">Категория</div>
+        <div class="chips chips--kind" id="categoryChips"></div>
+        <div class="expense-categories hidden" id="expenseCategoryBlock">
+          <div class="chips" id="categorySubChips"></div>
+        </div>
+
+        <label class="field">
+          <span class="field__label">Дата транзакции (необязательно)</span>
+          <input
+            class="field__input"
+            id="transactionDate"
+            type="text"
+            inputmode="numeric"
+            placeholder="дд.мм.гггг"
+            autocomplete="off"
+            maxlength="10"
+          />
+        </label>
+
+        <div class="debt-fields hidden" id="debtFields">
+          <label class="field">
+            <span class="field__label">Кто взял</span>
+            <input class="field__input" id="debtorName" type="text" placeholder="Имя или заметка" />
+          </label>
+          <label class="field">
+            <span class="field__label">Вернуть до</span>
+            <input
+              class="field__input"
+              id="returnDueDate"
+              type="text"
+              inputmode="numeric"
+              placeholder="дд.мм.гггг"
+              autocomplete="off"
+              maxlength="10"
+            />
+          </label>
+        </div>
+
+        <label class="field">
+          <span class="field__label">Заметка (необязательно)</span>
+          <input class="field__input" id="noteInput" type="text" placeholder="Например: обед" />
+        </label>
+
+        <button class="btn btn--primary" id="saveExpense" type="button">Сохранить</button>
+      </section>
+
+      <!-- HISTORY -->
+      <section class="panel" data-panel="history" id="panelHistory">
+        <div class="history-toolbar">
+          <div class="filter-row">
+            <button class="filter-btn filter-btn--active" data-filter="month" type="button">Месяц</button>
+            <button class="filter-btn" data-filter="all" type="button">Всё</button>
+          </div>
+          <button class="history-toolbar__select" id="historySelectToggle" type="button">Выбор</button>
+        </div>
+        <div class="history-select-bar hidden" id="historySelectBar">
+          <button class="history-select-bar__btn" id="historySelectAll" type="button">Все</button>
+          <button class="history-select-bar__btn history-select-bar__btn--danger" id="historyDeleteSelected" type="button" disabled>Удалить</button>
+          <button class="history-select-bar__btn" id="historyCancelSelect" type="button">Готово</button>
+        </div>
+        <ul class="expense-list" id="expenseList"></ul>
+        <p class="empty" id="historyEmpty">Пока нет трат</p>
+      </section>
+
+      <!-- DEBTS -->
+      <section class="panel" data-panel="debts" id="panelDebts">
+        <div class="history-toolbar history-toolbar--end">
+          <button class="history-toolbar__select" id="debtsSelectToggle" type="button">Выбор</button>
+        </div>
+        <div class="history-select-bar hidden" id="debtsSelectBar">
+          <button class="history-select-bar__btn" id="debtsSelectAll" type="button">Все</button>
+          <button class="history-select-bar__btn history-select-bar__btn--danger" id="debtsDeleteSelected" type="button" disabled>Удалить</button>
+          <button class="history-select-bar__btn" id="debtsCancelSelect" type="button">Готово</button>
+        </div>
+        <div class="debts-summary" id="debtsSummary"></div>
+        <ul class="expense-list" id="debtsList"></ul>
+        <p class="empty" id="debtsEmpty">Пока нет долгов</p>
+      </section>
+
+      <!-- CATEGORIES -->
+      <section class="panel" data-panel="categories" id="panelCategories">
+        <div class="chips chips--kind" id="categoryManageKindChips"></div>
+        <div class="category-manage-body" id="categoryManageBody">
+          <form class="add-category" id="addCategoryForm">
+            <input class="field__input" id="newCategoryName" type="text" placeholder="Новая категория" maxlength="32" />
+            <button class="btn btn--secondary" type="submit">Добавить</button>
+          </form>
+          <p class="category-manage-hint hidden" id="categoryManageHint"></p>
+          <ul class="category-manage" id="categoryManageList"></ul>
+        </div>
+      </section>
+    </main>
+
+    <nav class="nav" aria-label="Навигация">
+      <button class="nav__btn nav__btn--active" data-tab="add" type="button">
+        <span class="nav__icon">+</span>
+        <span>Добавить</span>
+      </button>
+      <button class="nav__btn" data-tab="history" type="button">
+        <span class="nav__icon">≡</span>
+        <span>История</span>
+      </button>
+      <button class="nav__btn" data-tab="debts" type="button">
+        <span class="nav__icon">⏱</span>
+        <span>Долги</span>
+      </button>
+      <button class="nav__btn" data-tab="categories" type="button">
+        <span class="nav__icon">⚙</span>
+        <span>Категории</span>
+      </button>
+    </nav>
+  </div>
+  <script src="app.js?v=6"></script>
+</body>
+</html>
