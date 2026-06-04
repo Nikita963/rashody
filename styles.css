@@ -841,6 +841,73 @@ html, body {
   line-height: 1.5;
 }
 
+.expense-item--partial .expense-item__amount {
+  color: var(--warning);
+}
+
+.expense-item__amount-sub {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+.return-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 16px;
+  padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+}
+
+.return-modal.hidden {
+  display: none;
+}
+
+.return-modal__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+}
+
+.return-modal__sheet {
+  position: relative;
+  width: 100%;
+  max-width: 420px;
+  background: var(--surface);
+  border-radius: var(--radius);
+  padding: 20px;
+  box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.35);
+}
+
+.return-modal__title {
+  margin: 0 0 8px;
+  font-size: 1.1rem;
+}
+
+.return-modal__hint {
+  margin: 0 0 16px;
+  font-size: 0.85rem;
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+.return-modal__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.return-modal__actions .btn--ghost {
+  background: transparent;
+  color: var(--muted);
+}
+
 .debts-summary strong {
   color: var(--warning);
 }

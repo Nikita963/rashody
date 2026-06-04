@@ -86,8 +86,53 @@ function normalizeState(parsed) {
     }
   });
   const expenses = Array.isArray(parsed.expenses) ? parsed.expenses : [];
-  expenses.forEach(normalizeExpenseDate);
+  expenses.forEach((exp) => {
+    normalizeExpenseDate(exp);
+    normalizeExpenseDebt(exp);
+  });
   return { categories, expenses };
+}
+
+function normalizeExpenseDebt(exp) {
+  const amount = Number(exp.amount);
+  if (!Number.isFinite(amount) || amount <= 0) return;
+  let returnedAmount = Number(exp.returnedAmount);
+  if (!Number.isFinite(returnedAmount) || returnedAmount < 0) {
+    returnedAmount = exp.returned ? amount : 0;
+  }
+  exp.returnedAmount = Math.min(amount, Math.round(returnedAmount * 100) / 100);
+  const remaining = Math.round((amount - exp.returnedAmount) * 100) / 100;
+  if (remaining <= 0) {
+    exp.returned = true;
+    if (!exp.returnedAt) exp.returnedAt = Date.now();
+  } else if (exp.returnedAmount > 0) {
+    exp.returned = false;
+    exp.returnedAt = null;
+  }
+}
+
+function debtReturnedAmount(exp) {
+  const amount = Number(exp.amount);
+  if (!Number.isFinite(amount) || amount <= 0) return 0;
+  let n = Number(exp.returnedAmount);
+  if (!Number.isFinite(n) || n < 0) n = exp.returned ? amount : 0;
+  return Math.min(amount, Math.round(n * 100) / 100);
+}
+
+function debtRemaining(exp) {
+  const amount = Number(exp.amount);
+  if (!Number.isFinite(amount) || amount <= 0) return 0;
+  return Math.max(0, Math.round((amount - debtReturnedAmount(exp)) * 100) / 100);
+}
+
+function isDebtOpen(exp) {
+  return !exp.returned && debtRemaining(exp) > 0;
+}
+
+function resetDebtReturnFields(exp) {
+  exp.returned = false;
+  exp.returnedAt = null;
+  exp.returnedAmount = 0;
 }
 
 function saveState() {
@@ -668,8 +713,8 @@ function renderStats() {
     emptyEl?.classList.toggle('hidden', breakdown.length > 0);
   }
 
-  const pending = debtExpenses().filter((e) => !e.returned);
-  const debtsTotal = pending.reduce((s, e) => s + e.amount, 0);
+  const pending = debtExpenses().filter(isDebtOpen);
+  const debtsTotal = pending.reduce((s, e) => s + debtRemaining(e), 0);
   const debtsBlock = $('#statsDebtsBlock');
   const debtsCard = $('#statsDebtsCard');
   if (debtsBlock && debtsCard) {
@@ -981,13 +1026,15 @@ function renderExpenseItem(exp, options = {}) {
   const cat = categoryById(exp.categoryId);
   const li = document.createElement('li');
   li.className = 'expense-item';
-  if (options.debtView && exp.returned) li.classList.add('expense-item--returned');
-
   const isDebt = cat?.isDebt;
+  const returnedPart = isDebt && debtReturnedAmount(exp) > 0 && isDebtOpen(exp);
+  if (options.debtView && exp.returned) li.classList.add('expense-item--returned');
+  if (options.debtView && returnedPart) li.classList.add('expense-item--partial');
+
   const isIncome = cat?.isIncome;
   const overdue =
     isDebt &&
-    !exp.returned &&
+    isDebtOpen(exp) &&
     exp.returnDueDate &&
     parseStoredDate(exp.returnDueDate) < new Date(new Date().toDateString());
 
@@ -1008,13 +1055,23 @@ function renderExpenseItem(exp, options = {}) {
     const label = exp.returned ? 'Вернули' : overdue ? 'Просрочено' : 'Вернуть до';
     meta += ` · ${label}: ${formatDate(exp.returnDueDate)}`;
   }
+  if (isDebt && debtReturnedAmount(exp) > 0) {
+    meta += ` · вернули ${formatMoney(debtReturnedAmount(exp))} из ${formatMoney(exp.amount)}`;
+  }
   if (exp.returned && !debtView) meta += ' · закрыто';
 
   const title = debtView
     ? exp.debtorName?.trim() || 'Без имени'
     : cat?.name ?? 'Без категории';
 
-  const showReturn = (options.actions || options.debtReturn) && isDebt && !exp.returned;
+  const showReturn = (options.actions || options.debtReturn) && isDebt && isDebtOpen(exp);
+  const displayAmount = isDebt && (debtView || options.debtReturn) && isDebtOpen(exp)
+    ? debtRemaining(exp)
+    : exp.amount;
+  const amountSub =
+    isDebt && (debtView || options.debtReturn) && returnedPart
+      ? `<span class="expense-item__amount-sub">из ${formatMoney(exp.amount)}</span>`
+      : '';
   const showEdit = options.edit && !options.selectable;
   const showActions = options.actions || showReturn || showEdit;
 
@@ -1033,7 +1090,7 @@ function renderExpenseItem(exp, options = {}) {
     <div class="expense-item__body">
       <div class="expense-item__row">
         <span class="expense-item__title">${escapeHtml(title)}</span>
-        <span class="expense-item__amount${isIncome ? ' expense-item__amount--income' : ''}">${isIncome ? '+' : ''}${formatMoney(exp.amount)}</span>
+        <span class="expense-item__amount${isIncome ? ' expense-item__amount--income' : ''}">${isIncome ? '+' : ''}${formatMoney(displayAmount)}${amountSub}</span>
       </div>
       <div class="expense-item__meta">${meta}</div>
       ${showActions ? `<div class="expense-item__actions"></div>` : ''}
@@ -1057,10 +1114,10 @@ function renderExpenseItem(exp, options = {}) {
       const ret = document.createElement('button');
       ret.type = 'button';
       ret.className = 'btn-return';
-      ret.textContent = 'Вернули';
+      ret.textContent = 'Возврат';
       ret.addEventListener('click', (e) => {
         e.stopPropagation();
-        markReturned(exp.id);
+        openPartialReturnDialog(exp.id);
       });
       actions.appendChild(ret);
     }
@@ -1236,16 +1293,18 @@ function renderHistory() {
 
 function renderDebts() {
   const debts = debtExpenses();
-  const pending = debts.filter((e) => !e.returned);
+  const pending = debts.filter(isDebtOpen);
 
   debts.sort((a, b) => {
-    if (a.returned !== b.returned) return a.returned ? 1 : -1;
+    const aClosed = !isDebtOpen(a);
+    const bClosed = !isDebtOpen(b);
+    if (aClosed !== bClosed) return aClosed ? 1 : -1;
     const da = a.returnDueDate ? new Date(a.returnDueDate) : new Date(8640000000000000);
     const db = b.returnDueDate ? new Date(b.returnDueDate) : new Date(8640000000000000);
     return da - db;
   });
 
-  const total = pending.reduce((s, e) => s + e.amount, 0);
+  const total = pending.reduce((s, e) => s + debtRemaining(e), 0);
   const summary = $('#debtsSummary');
   if (pending.length) {
     summary.innerHTML = `Активных долгов: <strong>${pending.length}</strong> на сумму <strong>${formatMoney(total)}</strong>`;
@@ -1402,15 +1461,24 @@ function saveExpense() {
     if (debt) {
       existing.debtorName = debtorName;
       existing.returnDueDate = returnDueDate;
-      if (!wasDebt) {
-        existing.returned = false;
-        existing.returnedAt = null;
+      if (!wasDebt) resetDebtReturnFields(existing);
+      else {
+        const paid = debtReturnedAmount(existing);
+        existing.returnedAmount = Math.min(paid, amount);
+        if (existing.returnedAmount >= amount) {
+          existing.returned = true;
+          existing.returnedAt = existing.returnedAt || Date.now();
+        } else if (existing.returnedAmount > 0) {
+          existing.returned = false;
+          existing.returnedAt = null;
+        } else {
+          resetDebtReturnFields(existing);
+        }
       }
     } else {
       existing.debtorName = '';
       existing.returnDueDate = null;
-      existing.returned = false;
-      existing.returnedAt = null;
+      resetDebtReturnFields(existing);
     }
     editingExpenseId = null;
     saveState();
@@ -1434,6 +1502,7 @@ function saveExpense() {
     returnDueDate: debt ? returnDueDate : null,
     returned: false,
     returnedAt: null,
+    returnedAmount: 0,
   };
 
   state.expenses.unshift(expense);
@@ -1446,14 +1515,77 @@ function saveExpense() {
   $('#amountInput').focus();
 }
 
-function markReturned(id) {
+let partialReturnExpenseId = null;
+
+function openPartialReturnDialog(id) {
+  const exp = state.expenses.find((x) => x.id === id);
+  if (!exp || !isDebtCategory(exp.categoryId) || !isDebtOpen(exp)) return;
+  const remaining = debtRemaining(exp);
+  const paid = debtReturnedAmount(exp);
+  partialReturnExpenseId = id;
+  $('#partialReturnTitle').textContent = exp.debtorName?.trim() || 'Возврат';
+  const hint = $('#partialReturnHint');
+  hint.textContent = paid > 0
+    ? `Осталось ${formatMoney(remaining)} · уже вернули ${formatMoney(paid)}`
+    : `Осталось ${formatMoney(remaining)}`;
+  const input = $('#partialReturnAmount');
+  input.value = String(remaining);
+  $('#partialReturnModal').classList.remove('hidden');
+  input.focus();
+  input.select();
+}
+
+function closePartialReturnDialog() {
+  partialReturnExpenseId = null;
+  $('#partialReturnModal')?.classList.add('hidden');
+}
+
+function applyDebtReturn(id, payAmount) {
   const e = state.expenses.find((x) => x.id === id);
-  if (!e) return;
-  e.returned = true;
-  e.returnedAt = Date.now();
+  if (!e || !isDebtCategory(e.categoryId)) return null;
+  const remaining = debtRemaining(e);
+  if (remaining <= 0) return null;
+  const pay = Math.min(payAmount, remaining);
+  if (!pay || pay <= 0) return null;
+  e.returnedAmount = Math.round((debtReturnedAmount(e) + pay) * 100) / 100;
+  if (debtRemaining(e) <= 0) {
+    e.returned = true;
+    e.returnedAt = Date.now();
+  } else {
+    e.returned = false;
+    e.returnedAt = null;
+  }
+  return pay;
+}
+
+function submitPartialReturn(fullOnly = false) {
+  const id = partialReturnExpenseId;
+  if (!id) return;
+  const exp = state.expenses.find((x) => x.id === id);
+  if (!exp) {
+    closePartialReturnDialog();
+    return;
+  }
+  const remaining = debtRemaining(exp);
+  const amount = fullOnly ? remaining : parseAmount($('#partialReturnAmount').value);
+  if (!amount) {
+    showToast('Введите сумму возврата');
+    $('#partialReturnAmount').focus();
+    return;
+  }
+  if (amount > remaining) {
+    showToast(`Не больше ${formatMoney(remaining)}`);
+    $('#partialReturnAmount').focus();
+    return;
+  }
+  const paid = applyDebtReturn(id, amount);
+  if (!paid) return;
   saveState();
+  closePartialReturnDialog();
   renderAll();
-  showToast('Отмечено как возвращённое');
+  const left = debtRemaining(exp);
+  if (left <= 0) showToast('Долг полностью закрыт');
+  else showToast(`Возврат ${formatMoney(paid)} · осталось ${formatMoney(left)}`);
 }
 
 function deleteExpenses(ids) {
@@ -1685,6 +1817,14 @@ function init() {
   $('#addCategoryForm').addEventListener('submit', (e) => {
     e.preventDefault();
     addCategory($('#newCategoryName').value);
+  });
+
+  $('#partialReturnSubmit')?.addEventListener('click', () => submitPartialReturn(false));
+  $('#partialReturnAll')?.addEventListener('click', () => submitPartialReturn(true));
+  $('#partialReturnCancel')?.addEventListener('click', closePartialReturnDialog);
+  $('#partialReturnBackdrop')?.addEventListener('click', closePartialReturnDialog);
+  $('#partialReturnAmount')?.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') submitPartialReturn(false);
   });
 
   $('#amountInput').focus();

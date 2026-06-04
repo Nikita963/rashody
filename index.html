@@ -202,6 +202,31 @@
       </button>
     </nav>
   </div>
-  <script src="app.js?v=11"></script>
+
+  <div class="return-modal hidden" id="partialReturnModal" role="dialog" aria-modal="true" aria-labelledby="partialReturnTitle">
+    <div class="return-modal__backdrop" id="partialReturnBackdrop"></div>
+    <div class="return-modal__sheet">
+      <h2 class="return-modal__title" id="partialReturnTitle">Возврат</h2>
+      <p class="return-modal__hint" id="partialReturnHint"></p>
+      <label class="field">
+        <span class="field__label">Сумма возврата, ₽</span>
+        <input
+          class="field__input"
+          id="partialReturnAmount"
+          type="text"
+          inputmode="decimal"
+          placeholder="0"
+          autocomplete="off"
+        />
+      </label>
+      <div class="return-modal__actions">
+        <button class="btn btn--primary" id="partialReturnSubmit" type="button">Записать</button>
+        <button class="btn btn--secondary" id="partialReturnAll" type="button">Вернуть всё</button>
+        <button class="btn btn--ghost" id="partialReturnCancel" type="button">Отмена</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js?v=12"></script>
 </body>
 </html>
